@@ -11,7 +11,7 @@ function App() {
     <>
      <Router>
             <Routes>
-                <Route path='/' element={<Login/>}> </Route>
+                <Route path='/PublicChat' element={<Login/>}> </Route>
                 <Route path='/chat' element={<Chat/>}> </Route>
             </Routes>
             </Router>   
