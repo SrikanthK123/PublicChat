@@ -9,42 +9,39 @@ const Login = () => {
     const [isExistingUser, setIsExistingUser] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     const handleLogin = async (event) => {
         event.preventDefault();
         setError('');
 
-        if (isExistingUser) {
-            try {
-                const response = await axios.post('http://localhost:4000/api/checkUser', { name: username, groupCode });
-                if (response.data.success) {
-                    localStorage.setItem('username', username);
-                    navigate('/chat');
-                } else {
-                    setError(response.data.message);
-                }
-            } catch (err) {
-                setError('Error occurred while checking user');
+        try {
+            const url = isExistingUser 
+                ? `${backendUrl}/api/checkUser` 
+                : `${backendUrl}/api/createUser`;
+
+            const data = isExistingUser 
+                ? { name: username, groupCode } 
+                : { name: username, MessageChat: [], groupCode: generateRandomGroupCode() };
+
+            const response = await axios.post(url, data);
+
+            if (response.data.success) {
+                localStorage.setItem('username', username);
+                navigate('/chat');
+            } else {
+                setError(response.data.message);
             }
-        } else {
-            try {
-                const response = await axios.post('http://localhost:4000/api/createUser', { name: username, MessageChat: [], groupCode: generateRandomGroupCode() });
-                if (response.data.success) {
-                    localStorage.setItem('username', username);
-                    navigate('/chat');
-                } else {
-                    setError(response.data.message);
-                }
-            } catch (err) {
-                setError('Error occurred while creating user');
-            }
+        } catch (err) {
+            setError('Error occurred while processing request');
         }
     };
 
     const generateRandomGroupCode = () => {
-        // Generate a random group code (you can customize this function)
+        // Generate a random group code
         return Math.random().toString(36).substring(2, 7).toUpperCase();
     };
+
 
     return (
         <div className='login-container'>

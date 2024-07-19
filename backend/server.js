@@ -13,12 +13,11 @@ app.use(express.json());
 
 // Middleware to handle CORS
 app.use(cors({
-   /* origin: 'https://srikanthk123.github.io', // Allow GitHub Pages domain
-    methods: 'GET,POST,PUT,DELETE', // Allow these methods
-    allowedHeaders: 'Content-Type,Authorization', // Allow these headers
-    credentials: true, // Allow cookies to be sent with requests*/
-  }));
-  
+  /* origin: 'https://srikanthk123.github.io', // Allow GitHub Pages domain
+   methods: 'GET,POST,PUT,DELETE', // Allow these methods
+   allowedHeaders: 'Content-Type,Authorization', // Allow these headers
+   credentials: true, // Allow cookies to be sent with requests*/
+}));
 
 // Database connection
 dbCon();
@@ -26,7 +25,15 @@ dbCon();
 // Define your routes
 app.use('/api', routers);
 
+// Endpoint to return configuration data
+app.get('/api/config', (req, res) => {
+  res.json({
+    backendUrl: process.env.REACT_APP_BACKEND_URL,
+    // Add other configuration values as needed
+  });
+});
+
 const PORT = process.env.PORT || 4000; // Ensure the port is set to 4000 or any port of your choice
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

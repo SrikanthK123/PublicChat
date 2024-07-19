@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import userProfile from '../assets/Images/UserProfile.gif'
+import userProfile from '../assets/Images/UserProfile.gif';
 
 const Chat = () => {
     const [users, setUsers] = useState([]);
@@ -15,10 +15,12 @@ const Chat = () => {
     const [isPublicChat, setIsPublicChat] = useState(false);
     const [groupCode, setGroupCode] = useState(''); // Add GroupCode state
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await axios.get('http://localhost:4000/api/getUser');
+                const response = await axios.get(`${backendUrl}/api/getUser`);
                 if (response.data.success) {
                     setUsers(response.data.user);
                     if (response.data.user.length > 0) {
@@ -36,14 +38,15 @@ const Chat = () => {
         };
 
         fetchUsers();
-    }, []);
+    }, [backendUrl]);
 
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(`http://localhost:4000/api/getMessages/${activeUser}`);
+                const response = await axios.get(`${backendUrl}/api/getMessages/${activeUser}`);
                 if (response.data.success) {
                     setMessages(response.data.messages);
+                    
                 } else {
                     setError(response.data.message);
                 }
@@ -55,12 +58,12 @@ const Chat = () => {
         if (!isPublicChat && activeUser) {
             fetchMessages();
         }
-    }, [activeUser, isPublicChat]);
+    }, [activeUser, isPublicChat, backendUrl]);
 
     useEffect(() => {
         const fetchPublicMessages = async () => {
             try {
-                const response = await axios.get('http://localhost:4000/api/getPublicMessages');
+                const response = await axios.get(`${backendUrl}/api/getPublicMessages`);
                 if (response.data.success) {
                     setPublicMessages(response.data.messages);
                 } else {
@@ -74,34 +77,33 @@ const Chat = () => {
         if (isPublicChat) {
             fetchPublicMessages();
         }
-    }, [isPublicChat]);
+    }, [isPublicChat, backendUrl]);
 
     const handleSendMessage = async () => {
         if (messageInput.trim()) {
-            if (isPublicChat) {
-                try {
-                    const response = await axios.post('http://localhost:4000/api/sendPublicMessage', { content: messageInput, sender: currentUser });
-                    if (response.data.success) {
+            try {
+                const url = isPublicChat
+                    ? `${backendUrl}/api/sendPublicMessage`
+                    : `${backendUrl}/api/sendMessage/${activeUser}`;
+
+                const response = await axios.post(url, {
+                    content: messageInput,
+                    sender: currentUser
+                });
+                    console.log("ChatPage",backendUrl)
+                    console.log("This is testing",response)
+                if (response.data.success) {
+                    if (isPublicChat) {
                         setPublicMessages([...publicMessages, response.data.message]);
-                        setMessageInput('');
                     } else {
-                        setError(response.data.message);
-                    }
-                } catch (err) {
-                    setError('Failed to send message');
-                }
-            } else {
-                try {
-                    const response = await axios.post(`http://localhost:4000/api/sendMessage/${activeUser}`, { content: messageInput, sender: currentUser });
-                    if (response.data.success) {
                         setMessages([...messages, response.data.message]);
-                        setMessageInput('');
-                    } else {
-                        setError(response.data.message);
                     }
-                } catch (err) {
-                    setError('Failed to send message');
+                    setMessageInput('');
+                } else {
+                    setError(response.data.message);
                 }
+            } catch (err) {
+                setError('Failed to send message');
             }
         }
     };
@@ -115,7 +117,7 @@ const Chat = () => {
 
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(`http://localhost:4000/api/getMessages/${userId}`);
+                const response = await axios.get(`${backendUrl}/api/getMessages/${userId}`);
                 if (response.data.success) {
                     setMessages(response.data.messages);
                 } else {
@@ -138,7 +140,7 @@ const Chat = () => {
 
         const fetchPublicMessages = async () => {
             try {
-                const response = await axios.get('http://localhost:4000/api/getPublicMessages');
+                const response = await axios.get(`${backendUrl}/api/getPublicMessages`);
                 if (response.data.success) {
                     setPublicMessages(response.data.messages);
                 } else {
@@ -159,8 +161,11 @@ const Chat = () => {
     return (
         <div className='chat-container'>
             <div className='user-list text-white' style={{ backgroundColor: '#001529' }}>
-                <div className='p-2 m-2' style={{display:'flex',justifyContent:'center',backgroundColor:'#0056b3',borderRadius:'10px'}}>
-                <h4 style={{fontSize:'18px'}}> <img src= {userProfile} alt='UserProfile' style={{width:'60px',height:'50px'}} />{currentUser}</h4>
+                <div className='p-2 m-2' style={{ display: 'flex', justifyContent: 'center', backgroundColor: '#0056b3', borderRadius: '10px' }}>
+                    <h4 style={{ fontSize: '18px' }}>
+                        <img src={userProfile} alt='UserProfile' style={{ width: '60px', height: '50px' }} />
+                        {currentUser}
+                    </h4>
                 </div>
                 
                 <ul className="p-3" style={{ listStyle: 'none' }}>
@@ -190,7 +195,7 @@ const Chat = () => {
                 </ul>   
             </div>
             <div className='chat-box' style={{ backgroundColor: '#e7eaf6' }}>
-                <h2 style={{ fontFamily:'serif'}}>
+                <h2 style={{ fontFamily: 'serif' }}>
                     Chat with {recipientName}
                     {isPublicChat && (
                         <span className='group-code'>
