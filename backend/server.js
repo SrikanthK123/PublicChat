@@ -13,10 +13,10 @@ app.use(express.json());
 
 // Middleware to handle CORS
 app.use(cors({
-  /* origin: 'https://srikanthk123.github.io', // Allow GitHub Pages domain
-   methods: 'GET,POST,PUT,DELETE', // Allow these methods
-   allowedHeaders: 'Content-Type,Authorization', // Allow these headers
-   credentials: true, // Allow cookies to be sent with requests*/
+  origin: '*', // Replace with your frontend URL
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: 'Content-Type,Authorization',
+  credentials: true,
 }));
 
 // Database connection
@@ -24,6 +24,8 @@ dbCon();
 
 // Define your routes
 app.use('/api', routers);
+
+
 
 // Endpoint to return configuration data
 app.get('/api/config', (req, res) => {
@@ -33,7 +35,7 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 4000; // Ensure the port is set to 4000 or any port of your choice
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

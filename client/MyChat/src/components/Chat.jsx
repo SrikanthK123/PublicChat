@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import userProfile from '../assets/Images/UserProfile.gif';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Notes from './Notes';
 
 const Chat = () => {
     const [users, setUsers] = useState([]);
@@ -13,7 +16,7 @@ const Chat = () => {
     const [activeUserName, setActiveUserName] = useState('');
     const [recipientName, setRecipientName] = useState('');
     const [isPublicChat, setIsPublicChat] = useState(false);
-    const [groupCode, setGroupCode] = useState(''); // Add GroupCode state
+    const [groupCode, setGroupCode] = useState('');
 
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -27,7 +30,7 @@ const Chat = () => {
                         setActiveUser(response.data.user[0]._id);
                         setActiveUserName(response.data.user[0].name);
                         setRecipientName(response.data.user[0].name);
-                        setGroupCode(response.data.user[0].groupCode); // Set GroupCode
+                        setGroupCode(response.data.user[0].groupCode);
                     }
                 } else {
                     setError(response.data.message);
@@ -46,7 +49,6 @@ const Chat = () => {
                 const response = await axios.get(`${backendUrl}/api/getMessages/${activeUser}`);
                 if (response.data.success) {
                     setMessages(response.data.messages);
-                    
                 } else {
                     setError(response.data.message);
                 }
@@ -90,8 +92,7 @@ const Chat = () => {
                     content: messageInput,
                     sender: currentUser
                 });
-                    console.log("ChatPage",backendUrl)
-                    console.log("This is testing",response)
+
                 if (response.data.success) {
                     if (isPublicChat) {
                         setPublicMessages([...publicMessages, response.data.message]);
@@ -99,11 +100,14 @@ const Chat = () => {
                         setMessages([...messages, response.data.message]);
                     }
                     setMessageInput('');
+                    toast.success('Message sent successfully!');
                 } else {
                     setError(response.data.message);
+                    toast.error('Failed to send message.');
                 }
             } catch (err) {
                 setError('Failed to send message');
+                toast.error('Failed to send message.');
             }
         }
     };
@@ -113,7 +117,7 @@ const Chat = () => {
         setActiveUser(userId);
         setActiveUserName(userName);
         setRecipientName(userName);
-        setGroupCode(userGroupCode); // Update GroupCode for the selected user
+        setGroupCode(userGroupCode);
 
         const fetchMessages = async () => {
             try {
@@ -136,7 +140,7 @@ const Chat = () => {
         setActiveUser('');
         setActiveUserName('');
         setRecipientName('Everyone');
-        setGroupCode('supersix'); // Clear GroupCode for public chat
+        setGroupCode('supersix');
 
         const fetchPublicMessages = async () => {
             try {
@@ -155,14 +159,29 @@ const Chat = () => {
     };
 
     const formatTimestamp = (timestamp) => {
-        return new Date(timestamp).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }); // Show only hours and minutes
+        const now = new Date();
+        const messageDate = new Date(timestamp);
+        
+        const isToday = now.toDateString() === messageDate.toDateString();
+        const isYesterday = now.getDate() - 1 === messageDate.getDate() &&
+                            now.getMonth() === messageDate.getMonth() &&
+                            now.getFullYear() === messageDate.getFullYear();
+
+        if (isToday) {
+            return `Today at ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+        if (isYesterday) {
+            return `Yesterday at ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+        return `${messageDate.toLocaleDateString()} at ${messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     };
 
     return (
         <div className='chat-container'>
+            <Notes />
             <div className='user-list text-white' style={{ backgroundColor: '#001529' }}>
                 <div className='p-2 m-2' style={{ display: 'flex', justifyContent: 'center', backgroundColor: '#0056b3', borderRadius: '10px' }}>
-                    <h4 style={{ fontSize: '18px' }}>
+                    <h4 style={{ fontSize: '25px' }}>
                         <img src={userProfile} alt='UserProfile' style={{ width: '60px', height: '50px' }} />
                         {currentUser}
                     </h4>
@@ -171,18 +190,20 @@ const Chat = () => {
                 <ul className="p-3" style={{ listStyle: 'none' }}>
                     <li
                         onClick={handlePublicChatToggle}
-                        className={`user-item ${isPublicChat ? 'active' : ''}`}
-                        style={{ borderRadius: '10px' }}
+                        className={`fs-3 mb-2 user-item ${isPublicChat ? 'active' : ''}`}
+                        style={{ borderRadius: '10px', }}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" className="bi bi-people-fill mx-2" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor" className="bi bi-people-fill mx-2 mb-2" viewBox="0 0 16 16">
                             <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
                         </svg>
                         Public Chat
                     </li>
+                    <div className='px-1' style={{backgroundColor:'rgb(30 55 79 / 95%)',borderRadius: '10px',}}> 
+                        <h4 className='p-2'>Private Chat Members</h4>
                     {users.map(user => (
                         <li
                             key={user._id}
-                            onClick={() => handleUserChange(user._id, user.name, user.groupCode)} // Pass the groupCode here
+                            onClick={() => handleUserChange(user._id, user.name, user.groupCode)}
                             style={{ borderRadius: '10px' }}
                             className={`user-item ${!isPublicChat && activeUser === user._id ? 'active' : ''}`}
                         >
@@ -190,8 +211,10 @@ const Chat = () => {
                                 <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
                             </svg>
                             {user.name}
+                            
                         </li>
                     ))}
+                    </div>
                 </ul>   
             </div>
             <div className='chat-box' style={{ backgroundColor: '#e7eaf6' }}>
@@ -199,7 +222,7 @@ const Chat = () => {
                     Chat with {recipientName}
                     {isPublicChat && (
                         <span className='group-code'>
-                            (Group Code: {groupCode}) {/* Show GroupCode only in public chat */}
+                            (Group Code: {groupCode})
                         </span>
                     )}
                 </h2>
@@ -211,7 +234,9 @@ const Chat = () => {
                             key={index}
                             className={`message ${msg.sender === currentUser ? 'sent' : 'received'}`}
                         >
-                            <h3 style={{ fontFamily: 'sans-serif', fontWeight: 'bold' }}>{msg.sender === currentUser ? 'You' : msg.sender}</h3>
+                            <h3 style={{ fontFamily: 'sans-serif', fontWeight: 'bold' }}>
+                                {msg.sender === currentUser ? 'You' : msg.sender}
+                            </h3>
                             <p
                                 style={{
                                     marginBottom: '0.5rem',
@@ -246,6 +271,7 @@ const Chat = () => {
                     </button>
                 </div>
             </div>
+            <ToastContainer />
         </div>
     );
 };
