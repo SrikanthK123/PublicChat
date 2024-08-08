@@ -28,28 +28,26 @@ const CreateUser = async (req, res) => {
 // Get User Details
 const GetUser = async (req, res) => {
     try {
-        const users = await UserModels.find().select('_id name groupCode');
-        if (!users || users.length === 0) {
-            return res.status(404).json({ success: false, message: 'No users found' });
-        }
-        res.status(200).json({ success: true, users });
+      const users = await UserModels.find().select('_id name groupCode');
+      if (!users || users.length === 0) {
+        return res.status(404).json({ success: false, message: 'No users found' });
+      }
+      res.status(200).json({ success: true, users });
     } catch (error) {
-        console.error('Error in GetUser:', error);
-        
-        // Retry logic example (retrying once)
-        try {
-            console.log("Retrying...");
-            const users = await UserModels.find().select('_id name groupCode');
-            if (!users || users.length === 0) {
-                return res.status(404).json({ success: false, message: 'No users found' });
-            }
-            res.status(200).json({ success: true, users });
-        } catch (retryError) {
-            console.error('Retry failed:', retryError);
-            res.status(500).json({ success: false, message: 'Something went wrong', error: retryError.message });
-        }
+      console.error('Error in GetUser:', error);
+  
+      // Handle specific error types (e.g., timeout, network error)
+      if (error.name === 'MongoError' && error.message.includes('timed out')) {
+        // Implement more sophisticated retry logic with exponential backoff, etc.
+        console.log('Retry due to timeout...');
+        // Retry logic here
+      } else {
+        // For other errors, provide more informative error messages
+        res.status(500).json({ success: false, message: 'An error occurred while fetching users', error: error.message });
+      }
     }
-};
+  };
+  
 
 
 
