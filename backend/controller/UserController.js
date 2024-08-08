@@ -28,15 +28,17 @@ const CreateUser = async (req, res) => {
 // Get User Details
 const GetUser = async (req, res) => {
     try {
-        const user = await UserModels.find().select('_id name groupCode');
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not Found' });
+        const users = await UserModels.find().select('_id name groupCode');
+        if (!users || users.length === 0) {
+            return res.status(404).json({ success: false, message: 'No users found' });
         }
-        res.status(200).json({ success: true, user });
+        res.status(200).json({ success: true, users });
     } catch (error) {
-        return res.status(500).json({ success: false, message: 'Something went wrong' });
+        console.error('Error in GetUser:', error); // Improved logging
+        res.status(500).json({ success: false, message: 'Something went wrong' });
     }
 }
+
 
 // Check User and Group Code
 const CheckUser = async (req, res) => {
