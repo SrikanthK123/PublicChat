@@ -25,18 +25,21 @@ const Chat = () => {
             try {
                 const response = await axios.get(`${backendUrl}/api/getUser`);
                 if (response.data.success) {
-                    setUsers(response.data.user);
-                    if (response.data.user.length > 0) {
-                        setActiveUser(response.data.user[0]._id);
-                        setActiveUserName(response.data.user[0].name);
-                        setRecipientName(response.data.user[0].name);
-                        setGroupCode(response.data.user[0].groupCode);
+                    const users = response.data.users || []; // Corrected field name
+                    setUsers(users);
+                    if (users.length > 0) {
+                        const firstUser = users[0];
+                        setActiveUser(firstUser._id);
+                        setActiveUserName(firstUser.name);
+                        setRecipientName(firstUser.name);
+                        setGroupCode(firstUser.groupCode);
                     }
                 } else {
-                    setError(response.data.message);
+                    setError(response.data.message || 'Failed to fetch users');
                 }
             } catch (err) {
                 setError('Failed to fetch users');
+                console.error(err); // Log the error to the console
             }
         };
 
@@ -46,39 +49,41 @@ const Chat = () => {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(`${backendUrl}/api/getMessages/${activeUser}`);
-                if (response.data.success) {
-                    setMessages(response.data.messages);
-                } else {
-                    setError(response.data.message);
+                if (!isPublicChat && activeUser) {
+                    const response = await axios.get(`${backendUrl}/api/getMessages/${activeUser}`);
+                    if (response.data.success) {
+                        setMessages(response.data.messages || []);
+                    } else {
+                        setError(response.data.message || 'Failed to fetch messages');
+                    }
                 }
             } catch (err) {
                 setError('Failed to fetch messages');
+                console.error(err); // Log the error to the console
             }
         };
 
-        if (!isPublicChat && activeUser) {
-            fetchMessages();
-        }
+        fetchMessages();
     }, [activeUser, isPublicChat, backendUrl]);
 
     useEffect(() => {
         const fetchPublicMessages = async () => {
             try {
-                const response = await axios.get(`${backendUrl}/api/getPublicMessages`);
-                if (response.data.success) {
-                    setPublicMessages(response.data.messages);
-                } else {
-                    setError(response.data.message);
+                if (isPublicChat) {
+                    const response = await axios.get(`${backendUrl}/api/getPublicMessages`);
+                    if (response.data.success) {
+                        setPublicMessages(response.data.messages || []);
+                    } else {
+                        setError(response.data.message || 'Failed to fetch public messages');
+                    }
                 }
             } catch (err) {
                 setError('Failed to fetch public messages');
+                console.error(err); // Log the error to the console
             }
         };
 
-        if (isPublicChat) {
-            fetchPublicMessages();
-        }
+        fetchPublicMessages();
     }, [isPublicChat, backendUrl]);
 
     const handleSendMessage = async () => {
@@ -95,19 +100,20 @@ const Chat = () => {
 
                 if (response.data.success) {
                     if (isPublicChat) {
-                        setPublicMessages([...publicMessages, response.data.message]);
+                        setPublicMessages(prevMessages => [...prevMessages, response.data.message]);
                     } else {
-                        setMessages([...messages, response.data.message]);
+                        setMessages(prevMessages => [...prevMessages, response.data.message]);
                     }
                     setMessageInput('');
                     toast.success('Message sent successfully!');
                 } else {
-                    setError(response.data.message);
+                    setError(response.data.message || 'Failed to send message.');
                     toast.error('Failed to send message.');
                 }
             } catch (err) {
                 setError('Failed to send message');
                 toast.error('Failed to send message.');
+                console.error(err); // Log the error to the console
             }
         }
     };
@@ -123,12 +129,13 @@ const Chat = () => {
             try {
                 const response = await axios.get(`${backendUrl}/api/getMessages/${userId}`);
                 if (response.data.success) {
-                    setMessages(response.data.messages);
+                    setMessages(response.data.messages || []);
                 } else {
-                    setError(response.data.message);
+                    setError(response.data.message || 'Failed to fetch messages');
                 }
             } catch (err) {
                 setError('Failed to fetch messages');
+                console.error(err); // Log the error to the console
             }
         };
 
@@ -146,12 +153,13 @@ const Chat = () => {
             try {
                 const response = await axios.get(`${backendUrl}/api/getPublicMessages`);
                 if (response.data.success) {
-                    setPublicMessages(response.data.messages);
+                    setPublicMessages(response.data.messages || []);
                 } else {
-                    setError(response.data.message);
+                    setError(response.data.message || 'Failed to fetch public messages');
                 }
             } catch (err) {
                 setError('Failed to fetch public messages');
+                console.error(err); // Log the error to the console
             }
         };
 
@@ -191,33 +199,34 @@ const Chat = () => {
                     <li
                         onClick={handlePublicChatToggle}
                         className={`fs-3 mb-2 user-item ${isPublicChat ? 'active' : ''}`}
-                        style={{ borderRadius: '10px', }}
+                        style={{ borderRadius: '10px' }}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor" className="bi bi-people-fill mx-2 mb-2" viewBox="0 0 16 16">
                             <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
                         </svg>
                         Public Chat
                     </li>
-                    <div className='px-1' style={{backgroundColor:'rgb(30 55 79 / 95%)',borderRadius: '10px',}}> 
+                    <div className='px-1' style={{ backgroundColor: 'rgb(30 55 79 / 95%)', borderRadius: '10px' }}> 
                         <h4 className='p-2'>Private Chat Members</h4>
-                    {users.map(user => (
-                        <li
-                            key={user._id}
-                            onClick={() => handleUserChange(user._id, user.name, user.groupCode)}
-                            style={{ borderRadius: '10px' }}
-                            className={`user-item ${!isPublicChat && activeUser === user._id ? 'active' : ''}`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" className="bi bi-person-fill mx-2" viewBox="0 0 16 16">
-                                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
-                            </svg>
-                            {user.name}
-                            
-                        </li>
-                    ))}
+                        {users.length > 0 ? (
+                            users.map(user => (
+                                <li
+                                    key={user._id}
+                                    onClick={() => handleUserChange(user._id, user.name, user.groupCode)}
+                                    style={{ borderRadius: '10px' }}
+                                    className={`user-item ${!isPublicChat && activeUser === user._id ? 'active' : ''}`}
+                                >
+                                    {user.name}
+                                </li>
+                            ))
+                        ) : (
+                            <li>No users found</li>
+                        )}
                     </div>
-                </ul>   
+                </ul>
             </div>
-            <div className='chat-box' style={{ backgroundColor: '#e7eaf6' }}>
+
+           <div className='chat-box' style={{ backgroundColor: '#e7eaf6' }}>
                 <h2 style={{ fontFamily: 'serif' }}>
                     Chat with {recipientName}
                     {isPublicChat && (
@@ -226,35 +235,39 @@ const Chat = () => {
                         </span>
                     )}
                 </h2>
-                {error && <p>{error}</p>}
+              
                 
                 <div className='messages'>
-                    {(isPublicChat ? publicMessages : messages).map((msg, index) => (
-                        <div
-                            key={index}
-                            className={`message ${msg.sender === currentUser ? 'sent' : 'received'}`}
-                        >
-                            <h3 style={{ fontFamily: 'sans-serif', fontWeight: 'bold' }}>
-                                {msg.sender === currentUser ? 'You' : msg.sender}
-                            </h3>
-                            <p
-                                style={{
-                                    marginBottom: '0.5rem',
-                                    backgroundColor: msg.sender === currentUser ? '#8dc6ff' : '#f1f0f0',
-                                    color: msg.sender === currentUser ? '#352f44' : 'black',
-                                    minWidth: '80px',
-                                    padding: '0.5rem',
-                                    borderRadius: '0.5rem',
-                                    alignSelf: msg.sender === currentUser ? 'flex-end' : 'flex-start',
-                                    boxShadow: 'rgba(0, 0, 0, 0.24) 0px 3px 8px'
-                                }}
-                                className='p-3'
+                    {(isPublicChat ? publicMessages : messages).length > 0 ? (
+                        (isPublicChat ? publicMessages : messages).map((msg, index) => (
+                            <div
+                                key={index}
+                                className={`message ${msg.sender === currentUser ? 'sent' : 'received'}`}
                             >
-                                {msg.content}
-                            </p>
-                            <span className='timestamp' style={{ color: '#5c5470' }}>{formatTimestamp(msg.createdAt)}</span>
-                        </div>
-                    ))}
+                                <h3 style={{ fontFamily: 'sans-serif', fontWeight: 'bold' }}>
+                                    {msg.sender === currentUser ? 'You' : msg.sender}
+                                </h3>
+                                <p
+                                    style={{
+                                        marginBottom: '0.5rem',
+                                        backgroundColor: msg.sender === currentUser ? '#8dc6ff' : '#f1f0f0',
+                                        color: msg.sender === currentUser ? '#352f44' : 'black',
+                                        minWidth: '80px',
+                                        padding: '0.5rem',
+                                        borderRadius: '0.5rem',
+                                        alignSelf: msg.sender === currentUser ? 'flex-end' : 'flex-start',
+                                        boxShadow: 'rgba(0, 0, 0, 0.24) 0px 3px 8px'
+                                    }}
+                                    className='p-3'
+                                >
+                                    {msg.content}
+                                </p>
+                                <span className='timestamp' style={{ color: '#5c5470' }}>{formatTimestamp(msg.createdAt)}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <p>No messages</p>
+                    )}
                 </div>
                 <div className='message-input'>
                     <input
@@ -271,6 +284,7 @@ const Chat = () => {
                     </button>
                 </div>
             </div>
+
             <ToastContainer />
         </div>
     );
