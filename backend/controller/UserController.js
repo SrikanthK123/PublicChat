@@ -34,10 +34,11 @@ const GetUser = async (req, res) => {
         }
         res.status(200).json({ success: true, users });
     } catch (error) {
-        console.error('Error in GetUser:', error);
-        res.status(500).json({ success: false, message: 'Something went wrong' });
+        console.error('Error in GetUser:', error); // Log the error
+        res.status(500).json({ success: false, message: 'Something went wrong', error: error.message }); // Include error message in response
     }
 };
+
 
 
 // Check User and Group Code
