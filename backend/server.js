@@ -25,7 +25,10 @@ dbCon();
 // Define your routes
 app.use('/api', routers);
 
-
+// Simple Hello World endpoint
+app.get('/hello', (req, res) => {
+  res.send('Hello World');
+});
 
 // Endpoint to return configuration data
 app.get('/api/config', (req, res) => {
